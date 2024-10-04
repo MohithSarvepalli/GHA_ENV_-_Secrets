@@ -1,0 +1,66 @@
+name: Test_NPM
+on:
+  pull_request:
+    types: [opened, reopened]
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'test-*'
+      - 'feature/*'
+env:
+    MONGODB_DB_NAME: gha-demo
+jobs:
+  npm1:
+    env:
+        MONGODB_CLUSTER_ADDRESS: cluster0.vuuju.mongodb.net
+        MONGODB_USERNAME: mohith
+        MONGODB_PASSWORD: zxRbfllymyo3pHlI
+        PORT: 8080
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copying Code
+        uses: actions/checkout@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Server
+        run: npm start &  npx wait-on http://127.0.0.1:$PORT
+      - name: Run tests
+        run: npm test
+      - name: Build the project
+        run: npm run build
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-artifact
+          path: |
+           dist
+      - name: Output Info
+        run: echo "${{ env.MONGODB_USERNAME }}"
+  deploy:
+    needs: npm1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copying Code
+        uses: actions/checkout@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 21
+      - name: Install dependencies
+        run: npm ci
+      - name: downloading artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-artifact
+      - name: Listing
+        run: ls
+      - name: Deploy Message
+        run: echo "Deploying the project......."
+
+      
+    
